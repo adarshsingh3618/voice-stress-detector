@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual Environment
+venv/
+
+# Audio files
+*.wav
+*.mp3
+
+# Temp files
+temp*
+*.log
+
+# Docker
+app.tar.gz
+
+# OS files
+.DS_Store
+
+# Model (optional if large)
+model/
