@@ -17,10 +17,10 @@ tab1, tab2, tab3 = st.tabs([
 ])
 
 with tab1:
-    upload.show()
+    record.show()
 
 with tab2:
-    record.show()
+    upload.show()
 
 with tab3:
     realtime.show()

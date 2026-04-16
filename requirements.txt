@@ -6,3 +6,4 @@ soundfile
 streamlit
 joblib
 streamlit-webrtc
+google-genai

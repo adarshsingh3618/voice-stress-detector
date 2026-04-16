@@ -136,14 +136,21 @@ def predict(audio_path):
     feat = extract_features(audio_path)
 
     if feat is None:
-        return "Error", 0.0
+        return "Error", 0.0, 0.0
 
     feat_scaled = scaler.transform([feat])
 
     pred = model.predict(feat_scaled)[0]
     prob = model.predict_proba(feat_scaled)[0][1]
 
-    return ("Stress" if pred == 1 else "Not Stress"), float(prob)
+    # 🎯 Convert to 0–10 scale
+    stress_score = round(prob * 10, 1)
+
+    return (
+        "Stress" if pred == 1 else "Not Stress",
+        float(prob),
+        stress_score
+    )
 
 
 # -----------------------------------------
