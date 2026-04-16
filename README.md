@@ -1,17 +1,17 @@
 # 🎙️ Voice Stress Detection System
 
-A real-time AI-powered application that analyzes voice input to detect stress levels using audio features and machine learning techniques.
+An AI-powered web application that analyzes voice input to detect stress levels using audio processing and machine learning techniques.
 
 ---
 
 ## 🚀 Features
 
-* 🎤 Real-time voice recording and analysis
+* 🎤 Real-time voice recording & analysis
 * 🧠 Stress detection using ML models
-* 🔊 Audio feature extraction (Librosa-based)
-* 🌐 Interactive UI built with Streamlit
-* 🤖 Integration with external AI APIs (Gemini / Hugging Face)
-* 📊 Visualization of results
+* 🔊 Audio feature extraction (Librosa)
+* 🌐 Interactive UI with Streamlit
+* 🤖 AI API integration (Gemini / Hugging Face)
+* 📊 Result visualization
 
 ---
 
@@ -20,45 +20,51 @@ A real-time AI-powered application that analyzes voice input to detect stress le
 ```
 voice-stress-detector/
 │
-├── app.py                  # Main Streamlit app
-├── main.py                 # Core execution logic
-├── requirements.txt        # Dependencies
-├── Dockerfile              # Container setup
+├── app.py                  # Streamlit app entry point
+├── main.py                 # Core logic
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Docker setup
+├── README.md
 │
-├── data/                   # Dataset (if any)
+├── data/                   # Dataset (if used)
 ├── model/                  # Trained models
+├── tabs/                   # UI modules
+├── utils/                  # Helper utilities
 │
-├── tabs/                   # UI sections
-├── utils/                  # Helper functions
-│   ├── gemini_utils.py
-│   ├── fusion_utils.py
-│
-├── test_api.py             # API testing
-├── test_gemini.py          # Gemini integration test
-└── .gitignore
+├── test_api.py             # API test scripts
+├── test_gemini.py          # Gemini integration
+└── venv/                   # Virtual environment (not pushed)
 ```
 
 ---
 
-## ⚙️ Installation (Local Setup)
+## ⚙️ Local Setup (Recommended)
 
-### 1. Clone the repository
+### 1. Clone Repository
 
-```bash
+```
 git clone https://github.com/adarshsingh3618/voice-stress-detector.git
 cd voice-stress-detector
 ```
 
-### 2. Create virtual environment
+### 2. Install Python Tools
 
-```bash
+```
+sudo apt update
+sudo apt install python3-pip python3-venv -y
+```
+
+### 3. Create Virtual Environment
+
+```
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 4. Install Dependencies
 
-```bash
+```
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
@@ -73,17 +79,20 @@ GEMINI_API_KEY=your_gemini_api_key
 HF_TOKEN=your_huggingface_token
 ```
 
-⚠️ Never commit `.env` file to GitHub.
+⚠️ Important:
+
+* Do NOT push `.env` to GitHub
+* Add `.env` to `.gitignore`
 
 ---
 
-## ▶️ Run the Application
+## ▶️ Run Application
 
-```bash
-streamlit run app.py
+```
+streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 ```
 
-Then open:
+Open in browser:
 
 ```
 http://localhost:8501
@@ -91,41 +100,74 @@ http://localhost:8501
 
 ---
 
-## 🐳 Docker Deployment
+## ☁️ AWS Deployment (Ubuntu EC2)
+
+### 1. Launch EC2
+
+* OS: Ubuntu
+* Open ports: **22, 8501**
+
+---
+
+### 2. Connect to Server
+
+```
+ssh -i your-key.pem ubuntu@your-public-ip
+```
+
+---
+
+### 3. Clone Project
+
+```
+git clone https://github.com/adarshsingh3618/voice-stress-detector.git
+cd voice-stress-detector
+```
+
+---
+
+### 4. Install Python & Setup Environment
+
+```
+sudo apt update
+sudo apt install python3-pip python3-venv -y
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+---
+
+### 5. Run Application
+
+```
+streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+```
+
+---
+
+### 6. Access App
+
+```
+http://your-public-ip:8501
+```
+
+---
+
+## 🐳 Docker Deployment (Optional)
 
 ### Build Image
 
-```bash
+```
 docker build -t stress-detector .
 ```
 
 ### Run Container
 
-```bash
+```
 docker run -d -p 8501:8501 stress-detector
 ```
-
----
-
-## ☁️ AWS Deployment
-
-* Launch EC2 instance (Ubuntu)
-* Install Docker or Python environment
-* Clone repo
-* Run using Docker or Streamlit
-
----
-
-## 🧠 Tech Stack
-
-* Python
-* Streamlit
-* Librosa
-* Scikit-learn
-* NumPy / Pandas
-* Docker
-* AWS EC2
-* Gemini API / Hugging Face
 
 ---
 
@@ -135,41 +177,43 @@ This project follows semantic versioning:
 
 * `v1.0` → Initial stable version
 * `v1.1` → Feature improvements
-* `v2.0` → Major updates
+* Future → enhancements & scaling
 
 ---
 
-## ⚠️ Security Notes
+## ⚠️ Security Best Practices
 
-* API keys are stored using environment variables
-* Do NOT expose tokens in code
-* Regenerate keys if leaked
+* Never hardcode API keys
+* Use environment variables (`.env`)
+* Rotate keys if exposed
+* Use SSH for GitHub access
 
 ---
 
 ## 📈 Future Improvements
 
 * 🔁 CI/CD pipeline (GitHub Actions)
-* 🌐 Custom domain with HTTPS
-* 📦 Kubernetes deployment
-* 🧠 Improved ML model accuracy
-* 📱 Mobile-friendly UI
+* 🌐 Domain + HTTPS (Nginx)
+* 🐳 Optimized Docker image
+* ☸️ Kubernetes deployment
+* 🧠 Model accuracy improvements
 
 ---
 
 ## 👨‍💻 Author
 
 **Adarsh Singh**
-B.Tech Computer Science | DevOps & Cloud Enthusiast
+B.Tech Computer Science
+DevOps & Cloud Enthusiast
 
 ---
 
 ## ⭐ Contributing
 
-Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change.
+Contributions are welcome. Open an issue or submit a PR.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT License
