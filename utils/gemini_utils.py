@@ -3,6 +3,12 @@ import os
 import json
 import re
 import time
+from dotenv import load_dotenv
+
+# ----------------------------------------
+# LOAD ENV VARIABLES (.env support)
+# ----------------------------------------
+load_dotenv()
 
 
 # ----------------------------------------
@@ -27,7 +33,7 @@ def analyze_text_stress(client, user_input):
 
     Message: "{user_input}"
 
-    Return ONLY JSON. No explanation. No extra text.
+    Return ONLY JSON.
 
     Format:
     {{
@@ -37,19 +43,15 @@ def analyze_text_stress(client, user_input):
     }}
     """
 
-    # ----------------------------------------
-    # RETRY LOGIC (3 attempts)
-    # ----------------------------------------
     for attempt in range(3):
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.0-flash",
                 contents=prompt
             )
 
             text = response.text.strip()
 
-            # Extract JSON
             json_match = re.search(r'\{.*\}', text, re.DOTALL)
 
             if json_match:
@@ -57,32 +59,34 @@ def analyze_text_stress(client, user_input):
             else:
                 raise ValueError("No JSON found")
 
-            break  # success
+            break
 
-        except Exception:
+        except Exception as e:
+            print("Stress Analysis Error:", e)
             if attempt < 2:
                 time.sleep(2)
             else:
                 data = {
                     "stress_score": 5,
                     "emotion": "unknown",
-                    "reason": "API unavailable"
+                    "reason": "fallback"
                 }
 
-    # ----------------------------------------
-    # SAFETY CHECK (0–10)
-    # ----------------------------------------
+    # Clamp score
     score = data.get("stress_score", 5)
     data["stress_score"] = max(0, min(10, score))
 
-    # ----------------------------------------
-    # NORMALIZE EMOTION
-    # ----------------------------------------
     data["emotion"] = data.get("emotion", "unknown").lower()
 
     return data
+
+
+# ----------------------------------------
+# Companion Response (Hybrid AI)
+# ----------------------------------------
 def generate_companion_response(client, chat_history, stress_score, level):
 
+    # Get latest message
     latest_user_msg = ""
     for role, msg in reversed(chat_history):
         if role == "user":
@@ -99,7 +103,7 @@ def generate_companion_response(client, chat_history, stress_score, level):
 
     if any(word in latest_user_msg for word in crisis_keywords):
         return (
-            "I'm really sorry you're feeling this way. You’re not alone.\n\n"
+            "I'm really sorry you're feeling this way. You're not alone.\n\n"
             "Please reach out to someone right now:\n"
             "📞 A trusted person\n"
             "📞 A mental health helpline\n\n"
@@ -107,30 +111,30 @@ def generate_companion_response(client, chat_history, stress_score, level):
         )
 
     # ----------------------------------------
-    # 🧠 INTENT → HINT (NOT RESPONSE)
+    # 🧠 INTENT HINT (GUIDE GEMINI)
     # ----------------------------------------
     intent_hint = ""
 
     if "study" in latest_user_msg:
-        intent_hint = "User wants to study but is distracted. Suggest small realistic steps."
+        intent_hint = "User wants to study but is distracted. Suggest small steps."
 
     elif "distract" in latest_user_msg:
-        intent_hint = "User wants distraction. Suggest light and engaging activities."
+        intent_hint = "User wants distraction. Suggest light activities."
 
-    elif "alone" in latest_user_msg or "she leave" in latest_user_msg:
-        intent_hint = "User feels heartbroken and alone. Provide emotional support."
+    elif "alone" in latest_user_msg or "leave" in latest_user_msg:
+        intent_hint = "User feels lonely or heartbroken. Provide emotional support."
 
     elif "meditat" in latest_user_msg:
-        intent_hint = "User wants to try meditation. Guide simple breathing."
+        intent_hint = "User wants meditation. Guide simple breathing."
 
     elif "what should i do" in latest_user_msg:
         intent_hint = "User is confused. Give one simple actionable step."
 
     elif len(latest_user_msg) <= 3:
-        intent_hint = "User gave short reply. Ask gently and guide next step."
+        intent_hint = "User gave short reply. Ask follow-up gently."
 
     # ----------------------------------------
-    # 🧠 BUILD MEMORY CONTEXT
+    # 🧠 BUILD CONTEXT
     # ----------------------------------------
     history_text = ""
     for role, msg in chat_history:
@@ -140,7 +144,7 @@ def generate_companion_response(client, chat_history, stress_score, level):
             history_text += f"Assistant: {msg}\n"
 
     # ----------------------------------------
-    # 🎯 GEMINI PROMPT (THIS IS THE MAGIC)
+    # 🎯 GEMINI PROMPT
     # ----------------------------------------
     prompt = f"""
     You are a supportive AI companion.
@@ -151,32 +155,44 @@ def generate_companion_response(client, chat_history, stress_score, level):
     Conversation:
     {history_text}
 
-    Extra guidance:
+    Guidance:
     {intent_hint}
 
     Rules:
-    - Do NOT repeat previous responses
-    - Be natural and human
-    - Give NEW responses each time
+    - Do NOT repeat responses
+    - Be natural and empathetic
+    - Give NEW suggestions each time
     - Keep it short (2–4 lines)
-    - Be empathetic
-    - Give practical suggestions when needed
+    - Help the user practically
 
-    Respond to the latest user message.
+    Respond to the latest message.
     """
 
+    # ----------------------------------------
+    # 🔁 SAFE CALL
+    # ----------------------------------------
     try:
         response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt
         )
-        print("RAW RESPONSE:", response.text)
-        return response.text.strip()
+
+        reply = response.text.strip()
+        print("RAW RESPONSE:", reply)
+
+        # Prevent exact repetition
+        if len(chat_history) > 1:
+            last_reply = chat_history[-1][1]
+            if reply == last_reply:
+                reply += "\n\nLet's try a slightly different approach."
+
+        return reply
 
     except Exception as e:
         print("Gemini Error:", e)
 
         return (
-            "AI is temporarily unavailable. But I’m still here with you.\n"
-            "Let’s take one small step—what’s bothering you the most right now?"
+            f"I can see you're feeling {level.lower()} right now.\n"
+            "Let's take it step by step.\n"
+            "Tell me what's bothering you most."
         )
