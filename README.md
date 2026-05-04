@@ -1,17 +1,57 @@
-# 🎙️ Voice Stress Detection System
+# 🎙️ Voice Stress Detection System (AI Companion + Analytics)
 
-An AI-powered web application that analyzes voice input to detect stress levels using audio processing and machine learning techniques.
+An AI-powered web application that analyzes voice and text inputs to detect stress levels using machine learning, audio processing, and generative AI.
+
+This system goes beyond basic prediction by combining **voice intelligence**, **text emotion analysis**, and **behavioral analytics** into a single interactive dashboard.
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-* 🎤 Real-time voice recording & analysis
-* 🧠 Stress detection using ML models
-* 🔊 Audio feature extraction (Librosa)
-* 🌐 Interactive UI with Streamlit
-* 🤖 AI API integration (Gemini / Hugging Face)
-* 📊 Result visualization
+### 🎤 Voice-Based Stress Detection
+
+* Audio analysis using **Librosa**
+* ML model prediction using extracted features
+* Supports file upload, recording, and real-time monitoring
+
+### 💬 Text Emotion Analysis (AI)
+
+* Powered by **Google Gemini API**
+* Detects emotional tone from user input
+* Enhances prediction accuracy
+
+### ⚗️ Fusion Engine
+
+* Combines voice + text scores into a final stress score
+* Weighted prediction system for better reliability
+
+### 📊 Analytics Dashboard
+
+* Stress trends over time
+* Average, max, min stress levels
+* Visual timeline and insights
+* CSV export support
+
+### 🤖 AI Companion
+
+* Provides emotional feedback
+* Responds intelligently based on detected stress
+* Acts as a supportive assistant
+
+### 🔐 User Authentication System
+
+* Signup/Login functionality
+* Password hashing using bcrypt
+* User-specific stress history tracking
+
+### 🗄️ Database Integration
+
+* SQLite database (`users.db`)
+* Stores:
+
+  * User credentials
+  * Stress history
+  * Timestamps and scores
 
 ---
 
@@ -21,24 +61,82 @@ An AI-powered web application that analyzes voice input to detect stress levels 
 voice-stress-detector/
 │
 ├── app.py                  # Streamlit app entry point
-├── main.py                 # Core logic
-├── requirements.txt        # Python dependencies
-├── Dockerfile              # Docker setup
+├── main.py                 # Core prediction pipeline
+├── requirements.txt        # Dependencies
+├── Dockerfile
 ├── README.md
 │
-├── data/                   # Dataset (if used)
-├── model/                  # Trained models
 ├── tabs/                   # UI modules
-├── utils/                  # Helper utilities
+│   ├── upload.py
+│   ├── record.py
+│   └── realtime.py
 │
-├── test_api.py             # API test scripts
-├── test_gemini.py          # Gemini integration
-└── venv/                   # Virtual environment (not pushed)
+├── utils/                  # Helper modules
+│   ├── audio_utils.py
+│   ├── gemini_utils.py
+│   ├── fusion_utils.py
+│   └── db_auth.py
+│
+├── model/                  # ML model files
+│   ├── stress_model.pkl
+│   └── scaler.pkl
+│
+├── users.db                # SQLite database (local only)
+└── .env                    # Environment variables (not committed)
 ```
 
 ---
 
-## ⚙️ Local Setup (Recommended)
+## 🧠 How It Works
+
+```
+User Input (Audio / Text)
+        ↓
+Audio Processing (Librosa)
+        ↓
+ML Model Prediction
+        ↓
+Gemini API (Text Analysis)
+        ↓
+Fusion Engine (Final Score)
+        ↓
+Store in Database + Display Dashboard
+```
+
+---
+
+## ⚙️ Tech Stack
+
+**Frontend**
+
+* Streamlit
+
+**Backend**
+
+* Python
+
+**Machine Learning**
+
+* scikit-learn (HistGradientBoosting)
+* librosa
+* numpy
+
+**AI Integration**
+
+* Google Gemini API
+
+**Database**
+
+* SQLite (users.db)
+* bcrypt (password hashing)
+
+**Realtime**
+
+* streamlit-webrtc
+
+---
+
+## ⚙️ Local Setup
 
 ### 1. Clone Repository
 
@@ -47,21 +145,18 @@ git clone https://github.com/adarshsingh3618/voice-stress-detector.git
 cd voice-stress-detector
 ```
 
-### 2. Install Python Tools
+---
 
-```
-sudo apt update
-sudo apt install python3-pip python3-venv -y
-```
-
-### 3. Create Virtual Environment
+### 2. Create Virtual Environment
 
 ```
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 4. Install Dependencies
+---
+
+### 3. Install Dependencies
 
 ```
 pip install --upgrade pip
@@ -75,21 +170,17 @@ pip install -r requirements.txt
 Create a `.env` file in root directory:
 
 ```
-GEMINI_API_KEY=your_gemini_api_key
-HF_TOKEN=your_huggingface_token
+GEMINI_API_KEY=your_api_key_here
 ```
 
-⚠️ Important:
-
-* Do NOT push `.env` to GitHub
-* Add `.env` to `.gitignore`
+⚠️ Do NOT upload `.env` to GitHub
 
 ---
 
 ## ▶️ Run Application
 
 ```
-streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+streamlit run app.py
 ```
 
 Open in browser:
@@ -100,103 +191,68 @@ http://localhost:8501
 
 ---
 
-## ☁️ AWS Deployment (Ubuntu EC2)
+## ☁️ Deployment
 
-### 1. Launch EC2
+### 🌐 Streamlit Cloud (Recommended)
 
-* OS: Ubuntu
-* Open ports: **22, 8501**
-
----
-
-### 2. Connect to Server
-
-```
-ssh -i your-key.pem ubuntu@your-public-ip
-```
+* Push code to GitHub
+* Deploy via Streamlit Cloud
+* Add API key in **Secrets**
 
 ---
 
-### 3. Clone Project
+### ☁️ AWS EC2 (Production)
 
 ```
-git clone https://github.com/adarshsingh3618/voice-stress-detector.git
+ssh -i your-key.pem ubuntu@your-ip
+git clone <repo>
 cd voice-stress-detector
-```
-
----
-
-### 4. Install Python & Setup Environment
-
-```
-sudo apt update
-sudo apt install python3-pip python3-venv -y
 
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
 
----
-
-### 5. Run Application
-
-```
 streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 ```
 
 ---
 
-### 6. Access App
-
-```
-http://your-public-ip:8501
-```
-
----
-
-## 🐳 Docker Deployment (Optional)
-
-### Build Image
+### 🐳 Docker Deployment
 
 ```
 docker build -t stress-detector .
-```
-
-### Run Container
-
-```
 docker run -d -p 8501:8501 stress-detector
 ```
 
 ---
 
-## 📌 Versioning
+## 📊 Stress Level Classification
 
-This project follows semantic versioning:
-
-* `v1.0` → Initial stable version
-* `v1.1` → Feature improvements
-* Future → enhancements & scaling
+| Score | Level    |
+| ----- | -------- |
+| 0–3   | Low      |
+| 4–6   | Moderate |
+| 7–8   | High     |
+| 9–10  | Extreme  |
 
 ---
 
-## ⚠️ Security Best Practices
+## ⚠️ Notes
 
-* Never hardcode API keys
-* Use environment variables (`.env`)
-* Rotate keys if exposed
-* Use SSH for GitHub access
+* SQLite is used for local storage (resets on cloud deployment)
+* Real-time monitoring may have limitations on Streamlit Cloud
+* Model files must be included in the repository
 
 ---
 
 ## 📈 Future Improvements
 
-* 🔁 CI/CD pipeline (GitHub Actions)
-* 🌐 Domain + HTTPS (Nginx)
-* 🐳 Optimized Docker image
-* ☸️ Kubernetes deployment
-* 🧠 Model accuracy improvements
+* AI-generated stress reports
+* Weekly/monthly analytics
+* Cloud database integration (Supabase/Firebase)
+* CI/CD pipeline
+* Mobile-friendly UI
+* Advanced visualization (Plotly)
 
 ---
 
@@ -208,9 +264,10 @@ DevOps & Cloud Enthusiast
 
 ---
 
-## ⭐ Contributing
+## ⭐ Contribution
 
-Contributions are welcome. Open an issue or submit a PR.
+Contributions are welcome.
+Feel free to open issues or submit pull requests.
 
 ---
 
