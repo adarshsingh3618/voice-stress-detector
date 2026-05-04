@@ -5,21 +5,37 @@ from main import predict
 import tempfile
 import soundfile as sf
 import time
+import datetime
+
+from utils.db_auth import save_stress  # ✅ DB integration
 
 
 def show():
-    st.header("⚡ Real-Time Stress Monitoring")
 
-    st.info("System is continuously analyzing your voice...")
+    st.markdown('<div class="soft-card"><h2>⚡ Passive Stress Monitor</h2></div>', unsafe_allow_html=True)
 
-    # Initialize session state
-    if "result" not in st.session_state:
-        st.session_state.result = "Waiting..."
+    st.markdown("""
+    <div class="soft-card">
+        System is continuously listening in the background and updating your stress level every few seconds.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ---------------- SESSION STATE ---------------- #
+    if "last_update" not in st.session_state:
+        st.session_state.last_update = time.time()
+
+    if "status" not in st.session_state:
+        st.session_state.status = "Listening..."
         st.session_state.confidence = 0.0
-        st.session_state.history = []
 
-    # 🎙️ Hidden audio processor
+    if "buffer" not in st.session_state:
+        st.session_state.buffer = []
+
+    UPDATE_INTERVAL = 15  # seconds
+
+    # ---------------- AUDIO PROCESSOR ---------------- #
     class AudioProcessor(AudioProcessorBase):
+
         def recv(self, frame):
             audio = frame.to_ndarray()
 
@@ -27,50 +43,73 @@ def show():
             if len(audio.shape) > 1:
                 audio = np.mean(audio, axis=1)
 
-            # Save temp chunk
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                sf.write(tmp.name, audio, 16000)
+            # Append audio buffer
+            st.session_state.buffer.extend(audio.tolist())
 
-                try:
-                    result, confidence = predict(tmp.name)
+            current_time = time.time()
 
-                    st.session_state.result = result
-                    st.session_state.confidence = confidence
+            # Run prediction periodically
+            if current_time - st.session_state.last_update > UPDATE_INTERVAL:
 
-                    # 📊 Store history (limit size)
-                    value = confidence if result == "Stress" else 0
-                    st.session_state.history.append(value)
+                st.session_state.last_update = current_time
 
-                    if len(st.session_state.history) > 50:
-                        st.session_state.history.pop(0)
+                # Take last chunk (~3 sec)
+                chunk = np.array(st.session_state.buffer[-48000:])
 
-                except Exception:
-                    pass
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                    sf.write(tmp.name, chunk, 16000)
+
+                    try:
+                        result, confidence, voice_score = predict(tmp.name)
+
+                        st.session_state.status = result
+                        st.session_state.confidence = confidence
+
+                        # ---------------- SAVE DATA ---------------- #
+                        entry = {
+                            "time": datetime.datetime.now().strftime("%H:%M:%S"),
+                            "voice_score": voice_score,
+                            "text_score": 0,
+                            "final_score": voice_score
+                        }
+
+                        # Save in session (dashboard)
+                        if "history" not in st.session_state:
+                            st.session_state.history = []
+
+                        st.session_state.history.append(entry)
+
+                        # 🔥 Save in DB (per user)
+                        save_stress(
+                            st.session_state.user,
+                            entry["time"],
+                            entry["voice_score"],
+                            entry["text_score"],
+                            entry["final_score"]
+                        )
+
+                    except Exception:
+                        pass
 
             return frame
 
-    # Start WebRTC (no UI controls)
+    # ---------------- START STREAM ---------------- #
     webrtc_streamer(
-        key="stress-monitor",
+        key="silent-monitor",
         audio_processor_factory=AudioProcessor,
         media_stream_constraints={"audio": True, "video": False},
         async_processing=True,
     )
 
-    # 🔥 Live Status
-    st.subheader("🧠 Current Status")
+    # ---------------- OUTPUT ---------------- #
+    st.markdown('<div class="soft-card">', unsafe_allow_html=True)
+    st.subheader("🧠 Current Stress State")
 
-    if st.session_state.result == "Stress":
+    if st.session_state.status == "Stress":
         st.error(f"⚠️ Stress Detected ({st.session_state.confidence:.2f})")
-    elif st.session_state.result == "No Stress":
-        st.success(f"✅ No Stress ({st.session_state.confidence:.2f})")
+    elif st.session_state.status == "No Stress":
+        st.success(f"✅ Calm State ({st.session_state.confidence:.2f})")
     else:
         st.info("Listening...")
 
-    # 📊 Live Graph
-    st.subheader("📈 Stress Trend (Real-Time)")
-
-    if st.session_state.history:
-        st.line_chart(st.session_state.history)
-    else:
-        st.write("No data yet... start speaking 🎙️")
+    st.markdown('</div>', unsafe_allow_html=True)
